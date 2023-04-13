@@ -23,10 +23,12 @@ class PomodoApp extends StatefulWidget {
 }
 
 class _PomodoAppState extends State<PomodoApp> {
-  List<int> timeSet = [15, 20, 25, 30, 35];
+  List<int> timeSet = [1, 15, 20, 25, 30, 35];
+  bool isRest = false;
+  String btnText = 'Reset';
   int selectedMinute = 0;
   int minutes = 0;
-  int seconds = 60;
+  int seconds = 0;
   bool isRunning = false;
   int totalRound = 0;
   int totalGoal = 0;
@@ -34,17 +36,27 @@ class _PomodoAppState extends State<PomodoApp> {
 
   void onTick(Timer timer) {
     if (minutes == 0 && seconds == 0) {
-      setState(() {
-        minutes = selectedMinute;
-        seconds = 0;
-        isRunning = false;
-        totalRound++;
-        if (totalRound == 4) {
-          totalGoal++;
-          totalRound = 0;
-        }
-      });
-      timer.cancel();
+      if (isRest) {
+        setState(() {
+          isRest = false;
+          btnText = 'Reset';
+          minutes = selectedMinute;
+          seconds = 0;
+          isRunning = false;
+          totalRound++;
+
+          if (totalRound == 4) {
+            totalGoal++;
+            totalRound = 0;
+          }
+
+          timer.cancel();
+        });
+      } else {
+        btnText = 'Rest 5 Minute.';
+        minutes = 5;
+        isRest = true;
+      }
     } else {
       setState(() {
         if (seconds == 0) {
@@ -80,16 +92,19 @@ class _PomodoAppState extends State<PomodoApp> {
   }
 
   void onClickReset() {
+    if (isRest) return;
     isRunning = false;
     minutes = 0;
     seconds = 0;
     totalRound = 0;
     totalGoal = 0;
     selectedMinute = 0;
+    timer.cancel();
     setState(() {});
   }
 
   void btnSetTimer(String times) {
+    if (isRest) return;
     minutes = int.parse(times);
     selectedMinute = minutes;
     seconds = 0;
@@ -100,6 +115,10 @@ class _PomodoAppState extends State<PomodoApp> {
     isRunning = isRunning == false ? true : false;
     switch (isRunning) {
       case true:
+        if (minutes == 0 && seconds == 0) {
+          isRunning = false;
+          return;
+        }
         timer = Timer.periodic(const Duration(seconds: 1), onTick);
         break;
       case false:
@@ -186,13 +205,17 @@ class _PomodoAppState extends State<PomodoApp> {
                           decoration: BoxDecoration(
                               borderRadius:
                                   const BorderRadius.all(Radius.circular(10)),
-                              color: const Color(0xffff3f41),
+                              color: times == selectedMinute.toString()
+                                  ? Colors.white
+                                  : const Color(0xffff3f41),
                               border:
                                   Border.all(color: Colors.white, width: 2)),
                           child: Text(
                             times,
-                            style: const TextStyle(
-                                color: Colors.white,
+                            style: TextStyle(
+                                color: times == selectedMinute.toString()
+                                    ? const Color(0xffff3f41)
+                                    : Colors.white,
                                 fontSize: 35,
                                 fontWeight: FontWeight.bold),
                           ),
@@ -224,8 +247,7 @@ class _PomodoAppState extends State<PomodoApp> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  TextButton(
-                      onPressed: onClickReset, child: const Text('Reset')),
+                  TextButton(onPressed: onClickReset, child: Text(btnText)),
                 ],
               ),
               Padding(
